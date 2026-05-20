@@ -10,7 +10,7 @@
 
     hubris_task_gen = 0x0
     hubris_task_name = cosmo_seq
-    hubris_uptime_ms = 0x1909119a
+    hubris_uptime_ms = 420024730 ms
     class = hw.pwr.pmbus.alert
     pmbus_status = (PMBus status)
         STATUS_WORD = 0b100000000000001
@@ -26,4 +26,4 @@
     rail = VDDCR_CPU1_A0
     refdes = U103
     time = 0x19091194
-    version = 0x0
+    version = 0

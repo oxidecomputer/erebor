@@ -9,7 +9,7 @@
         pool = 0x9450308286f833b
         scheme = zfs
         vdev = 0xb5b32145267ddf28
-        version = 0x0
+        version = 0
     (end detector)
 
     ena = 0x5d6e33d2f00401

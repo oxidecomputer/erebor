@@ -177,7 +177,20 @@ impl<'a> Displayer<'a> {
         for (key, value) in obj {
             let key = match (key.as_str(), value) {
                 ("k", _) => "class",
-                ("v", _) => "version",
+                // special-case versions so that they aren't in hex
+                (name, serde_json::Value::Number(n))
+                    if name == "v" || name == "version" =>
+                {
+                    writeln!(f, "{:>indent$}version = {n}", "")?;
+                    continue;
+                }
+                // special-case uptime ms so they aren't in hex
+                (name, serde_json::Value::Number(n))
+                    if name.ends_with("ms") =>
+                {
+                    writeln!(f, "{:>indent$}{name} = {n} ms", "")?;
+                    continue;
+                }
                 ("pmbus_status", serde_json::Value::Object(status)) => {
                     writeln!(f, "{:>indent$}{key} = (PMBus status)", "")?;
                     self.prettyprint_pmbus_status(
