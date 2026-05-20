@@ -224,6 +224,7 @@ impl<'a> Displayer<'a> {
             val_name: &str,
             reg_name: &str,
         ) -> fmt::Result {
+            let nbits = nbits + 2; // leading "0b"
             if let Some(val) = obj.get(val_name) {
                 if let Some(val) = val.as_u64() {
                     writeln!(f, "{:>indent$}{reg_name} = {val:#0nbits$b}", "")?;
