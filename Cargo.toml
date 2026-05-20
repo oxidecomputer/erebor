@@ -1,0 +1,12 @@
+[package]
+name = "erebor"
+version = "0.1.0"
+edition = "2024"
+description = "A less ugly pretty-printer for `serde_json`-y ereport data."
+license = "MPL-2.0"
+
+[dependencies]
+serde_json = "1.0"
+
+[dev-dependencies]
+expectorate = "1.2.0"

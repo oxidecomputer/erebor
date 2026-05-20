@@ -1,0 +1,27 @@
+__tod = (array of 2 elements)
+    0x69c67284
+    0x17c6ea90
+(end __tod)
+
+__ttl = 0x1
+class = ereport.fs.zfs.vdev.bad_ashift
+detector = (object)
+    pool = 0x9450308286f833b
+    scheme = zfs
+    vdev = 0xb5b32145267ddf28
+    version = 0x0
+(end detector)
+
+ena = 0x5d6e33d2f00401
+parent_guid = 0x9450308286f833b
+parent_type = root
+pool = rpool
+pool_context = 0x0
+pool_failmode = wait
+pool_guid = 0x9450308286f833b
+prev_state = 0x0
+vdev_ashift = 0x9
+vdev_devid = id1,kdev@ABHYVE-9F86-8195-80CF/b
+vdev_guid = 0xb5b32145267ddf28
+vdev_path = /dev/dsk/c1t0d0s1
+vdev_type = disk

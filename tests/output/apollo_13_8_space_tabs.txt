@@ -1,0 +1,34 @@
+O2_tanks_stirred = true
+baseboard_part_number = 913-0000023
+baseboard_rev = 0x3
+baseboard_serial_number = BRM4200069
+crew = (array of 3 elements)
+        Swigert
+        Haise
+        Lovell
+(end crew)
+
+ereport_message_version = 0x0
+fault = (object)
+        kind = MAIN_BUS_B_UNDERVOLT
+        main_bus_b_voltage = 0.0
+(end fault)
+
+hubris_caboose = (object)
+        board = cosmo-b
+        commit = 3b9b40d840984e3cca6d40e73f020f96a40538c5
+        version = 1.0.67
+(end hubris_caboose)
+
+hubris_task_gen = 0x0
+hubris_task_name = cosmo_seq
+hubris_uptime_ms = 0x1909119a
+class = hw.pwr.pmbus.alert
+message = Houston, we have a problem!
+mission = (object)
+        flight = 0xd
+        program = Apollo
+(end mission)
+
+time = 0x19091194
+version = 0x0
