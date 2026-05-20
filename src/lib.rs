@@ -216,6 +216,22 @@ impl<'a> Displayer<'a> {
         indent: usize,
         obj: &serde_json::Map<String, serde_json::Value>,
     ) -> fmt::Result {
+        const STATUS_WORD: &str = "STATUS_WORD";
+        const STATUS_VOUT: &str = "STATUS_VOUT";
+        const STATUS_IOUT: &str = "STATUS_IOUT";
+        const STATUS_INPUT: &str = "STATUS_INPUT";
+        const STATUS_TEMPERATURE: &str = "STATUS_TEMPERATURE";
+        const STATUS_CML: &str = "STATUS_CML";
+        const STATUS_MFR_SPECIFIC: &str = "STATUS_MFR_SPECIFIC";
+        const REG_WIDTH: usize = const_max_len(&[
+            STATUS_WORD,
+            STATUS_VOUT,
+            STATUS_IOUT,
+            STATUS_INPUT,
+            STATUS_TEMPERATURE,
+            STATUS_MFR_SPECIFIC,
+        ]);
+
         fn print_status_reg(
             obj: &serde_json::Map<String, serde_json::Value>,
             f: &mut fmt::Formatter<'_>,
@@ -227,24 +243,36 @@ impl<'a> Displayer<'a> {
             let nbits = nbits + 2; // leading "0b"
             if let Some(val) = obj.get(val_name) {
                 if let Some(val) = val.as_u64() {
-                    writeln!(f, "{:>indent$}{reg_name} = {val:#0nbits$b}", "")?;
+                    writeln!(
+                        f,
+                        "{:>indent$}{reg_name:<REG_WIDTH$} = {val:#0nbits$b}",
+                        ""
+                    )?;
                 } else {
-                    writeln!(f, "{:>indent$}{reg_name} = <wrong type>", "")?;
+                    writeln!(
+                        f,
+                        "{:>indent$}{reg_name:<REG_WIDTH$} = <wrong type>",
+                        ""
+                    )?;
                 }
             } else {
-                writeln!(f, "{:>indent$}{reg_name} = <missing>", "")?;
+                writeln!(
+                    f,
+                    "{:>indent$}{reg_name:<REG_WIDTH$} = <missing>",
+                    ""
+                )?;
             }
 
             Ok(())
         }
 
-        print_status_reg(obj, f, indent, 16, "word", "STATUS_WORD")?;
-        print_status_reg(obj, f, indent, 8, "vout", "STATUS_VOUT")?;
-        print_status_reg(obj, f, indent, 8, "iout", "STATUS_IOUT")?;
-        print_status_reg(obj, f, indent, 8, "input", "STATUS_INPUT")?;
-        print_status_reg(obj, f, indent, 8, "temp", "STATUS_TEMPERATURE")?;
-        print_status_reg(obj, f, indent, 8, "cml", "STATUS_CML")?;
-        print_status_reg(obj, f, indent, 8, "mfr", "STATUS_MFR_SPECIFIC")?;
+        print_status_reg(obj, f, indent, 16, "word", STATUS_WORD)?;
+        print_status_reg(obj, f, indent, 8, "vout", STATUS_VOUT)?;
+        print_status_reg(obj, f, indent, 8, "iout", STATUS_IOUT)?;
+        print_status_reg(obj, f, indent, 8, "input", STATUS_INPUT)?;
+        print_status_reg(obj, f, indent, 8, "temp", STATUS_TEMPERATURE)?;
+        print_status_reg(obj, f, indent, 8, "cml", STATUS_CML)?;
+        print_status_reg(obj, f, indent, 8, "mfr", STATUS_MFR_SPECIFIC)?;
 
         Ok(())
     }
@@ -273,3 +301,16 @@ impl fmt::Display for Name<'_> {
 }
 
 const NULL: &str = "<null>";
+
+pub(crate) const fn const_max_len(strs: &[&str]) -> usize {
+    let mut max = 0;
+    let mut i = 0;
+    while i < strs.len() {
+        let len = strs[i].len();
+        if len > max {
+            max = len;
+        }
+        i += 1;
+    }
+    max
+}
