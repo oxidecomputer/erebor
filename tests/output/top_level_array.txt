@@ -1,0 +1,11 @@
+(array of 5 elements)
+    true
+    (object)
+        baz = false
+        foo = bar
+    (end array[1])
+
+    0x2a
+    <null>
+    hello world
+(end array)

@@ -1,8 +1,6 @@
 use erebor::Displayer;
 use expectorate::assert_contents;
 
-type Object = serde_json::Map<String, serde_json::Value>;
-
 const PMBUS_ALERT_EREPORT: &str = r#"{
   "baseboard_part_number": "913-0000023",
   "baseboard_rev": 3,
@@ -137,7 +135,7 @@ const BAD_ASHIFT_EREPORT: &str = r#"
 #[cfg_attr(not(feature = "pmbus"), ignore)]
 #[test]
 fn pmbus_alert_default_indent() {
-    let json = serde_json::from_str::<Object>(PMBUS_ALERT_EREPORT)
+    let json = serde_json::from_str::<serde_json::Value>(PMBUS_ALERT_EREPORT)
         .expect("JSON must parse");
     let displayed = Displayer::new(&json).to_string();
     assert_contents(
@@ -153,7 +151,7 @@ fn pmbus_alert_default_indent() {
 #[cfg_attr(not(feature = "pmbus"), ignore)]
 #[test]
 fn pmbus_alert_8_space_tabs() {
-    let json = serde_json::from_str::<Object>(PMBUS_ALERT_EREPORT)
+    let json = serde_json::from_str::<serde_json::Value>(PMBUS_ALERT_EREPORT)
         .expect("JSON must parse");
     let displayed = Displayer::new(&json).with_indent_spaces(8).to_string();
     assert_contents(
@@ -169,7 +167,7 @@ fn pmbus_alert_8_space_tabs() {
 #[cfg_attr(not(feature = "pmbus"), ignore)]
 #[test]
 fn pmbus_alert_indented() {
-    let json = serde_json::from_str::<Object>(PMBUS_ALERT_EREPORT)
+    let json = serde_json::from_str::<serde_json::Value>(PMBUS_ALERT_EREPORT)
         .expect("JSON must parse");
     let displayed =
         Displayer::new(&json).with_initial_indent_spaces(4).to_string();
@@ -186,9 +184,10 @@ fn pmbus_alert_indented() {
 #[cfg_attr(not(feature = "pmbus"), ignore)]
 #[test]
 fn pmbus_alert_missing_fields() {
-    let json =
-        serde_json::from_str::<Object>(PMBUS_ALERT_MISSING_FIELDS_EREPORT)
-            .expect("JSON must parse");
+    let json = serde_json::from_str::<serde_json::Value>(
+        PMBUS_ALERT_MISSING_FIELDS_EREPORT,
+    )
+    .expect("JSON must parse");
     let displayed = Displayer::new(&json).to_string();
     assert_contents(
         "tests/output/pmbus_alert_missing_fields.txt",
@@ -198,7 +197,7 @@ fn pmbus_alert_missing_fields() {
 
 #[test]
 fn apollo_13_default_indent() {
-    let json = serde_json::from_str::<Object>(APOLLO_13_EREPORT)
+    let json = serde_json::from_str::<serde_json::Value>(APOLLO_13_EREPORT)
         .expect("JSON must parse");
     let displayed = Displayer::new(&json).to_string();
     assert_contents(
@@ -209,7 +208,7 @@ fn apollo_13_default_indent() {
 
 #[test]
 fn apollo_13_8_space_tabs() {
-    let json = serde_json::from_str::<Object>(APOLLO_13_EREPORT)
+    let json = serde_json::from_str::<serde_json::Value>(APOLLO_13_EREPORT)
         .expect("JSON must parse");
     let displayed = Displayer::new(&json).with_indent_spaces(8).to_string();
     assert_contents(
@@ -220,7 +219,7 @@ fn apollo_13_8_space_tabs() {
 
 #[test]
 fn apollo_13_indented() {
-    let json = serde_json::from_str::<Object>(APOLLO_13_EREPORT)
+    let json = serde_json::from_str::<serde_json::Value>(APOLLO_13_EREPORT)
         .expect("JSON must parse");
     let displayed =
         Displayer::new(&json).with_initial_indent_spaces(4).to_string();
@@ -229,7 +228,7 @@ fn apollo_13_indented() {
 
 #[test]
 fn bad_ashift() {
-    let json = serde_json::from_str::<Object>(BAD_ASHIFT_EREPORT)
+    let json = serde_json::from_str::<serde_json::Value>(BAD_ASHIFT_EREPORT)
         .expect("JSON must parse");
     let displayed = Displayer::new(&json).to_string();
     assert_contents(
@@ -240,7 +239,7 @@ fn bad_ashift() {
 
 #[test]
 fn bad_ashift_8_space_tabs() {
-    let json = serde_json::from_str::<Object>(BAD_ASHIFT_EREPORT)
+    let json = serde_json::from_str::<serde_json::Value>(BAD_ASHIFT_EREPORT)
         .expect("JSON must parse");
     let displayed = Displayer::new(&json).with_indent_spaces(8).to_string();
     assert_contents(
@@ -251,9 +250,37 @@ fn bad_ashift_8_space_tabs() {
 
 #[test]
 fn bad_ashift_indented() {
-    let json = serde_json::from_str::<Object>(BAD_ASHIFT_EREPORT)
+    let json = serde_json::from_str::<serde_json::Value>(BAD_ASHIFT_EREPORT)
         .expect("JSON must parse");
     let displayed =
         Displayer::new(&json).with_initial_indent_spaces(4).to_string();
     assert_contents("tests/output/bad_ashift_indented.txt", displayed.as_ref());
+}
+
+#[test]
+fn top_level_array() {
+    const JSON: &str = r#"
+        [
+            true,
+            { "foo": "bar", "baz": false },
+            42,
+            null,
+            "hello world"
+        ]
+    "#;
+    let json = serde_json::from_str::<serde_json::Value>(JSON)
+        .expect("JSON must parse");
+    let displayed = Displayer::new(&json).to_string();
+    assert_contents("tests/output/top_level_array.txt", displayed.as_ref());
+}
+
+#[test]
+fn top_level_single_value() {
+    let json = serde_json::from_str::<serde_json::Value>("42")
+        .expect("JSON must parse");
+    let displayed = Displayer::new(&json).to_string();
+    assert_contents(
+        "tests/output/top_level_single_value.txt",
+        displayed.as_ref(),
+    );
 }

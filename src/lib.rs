@@ -69,7 +69,7 @@ use std::fmt;
 /// version = 0x0
 /// ```
 pub struct Displayer<'a> {
-    ereport: &'a Object,
+    ereport: &'a serde_json::Value,
     indent_spaces: usize,
     initial_indent: usize,
 }
@@ -81,7 +81,7 @@ impl<'a> Displayer<'a> {
     pub const DEFAULT_INITIAL_INDENT: usize = 0;
 
     #[must_use]
-    pub fn new(ereport: &'a Object) -> Self {
+    pub fn new(ereport: &'a serde_json::Value) -> Self {
         Self {
             ereport,
             indent_spaces: Self::DEFAULT_INDENT_SPACES,
@@ -329,7 +329,22 @@ impl<'a> Displayer<'a> {
 
 impl fmt::Display for Displayer<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.prettyprint_json_obj(f, self.initial_indent, self.ereport)
+        match self.ereport {
+            // If the top-level value is an object, go straight to the object
+            // prettyprinter to avoid trying to wrap it in a named object.
+            serde_json::Value::Object(obj) => {
+                self.prettyprint_json_obj(f, self.initial_indent, obj)
+            }
+            val => self.prettyprint_json(
+                f,
+                self.initial_indent,
+                // If it's *not* an object and we need a name for printing "(end
+                // {name})", it must be an array, so give it the generic name
+                // "array", as it doesn't have a field name.
+                Name::Key("array"),
+                val,
+            ),
+        }
     }
 }
 
