@@ -34,7 +34,6 @@ const PMBUS_ALERT_EREPORT: &str = r#"{
 }
 "#;
 
-
 const APOLLO_13_EREPORT: &str = r#"{
   "baseboard_part_number": "913-0000023",
   "baseboard_rev": 3,
@@ -99,6 +98,11 @@ const BAD_ASHIFT_EREPORT: &str = r#"
 }
 "#;
 
+// We only run tests for formatting ereports with PMBus status objects when the
+// `pmbus` dependency is enabled. They will be formatted differently when the
+// `pmbus` dependency is not enabled, since we require the `pmbus` crate to
+// determine the names of bitfields.
+#[cfg_attr(not(feature = "pmbus"), ignore)]
 #[test]
 fn pmbus_alert_default_indent() {
     let json = serde_json::from_str::<Object>(PMBUS_ALERT_EREPORT)
@@ -110,6 +114,11 @@ fn pmbus_alert_default_indent() {
     );
 }
 
+// We only run tests for formatting ereports with PMBus status objects when the
+// `pmbus` dependency is enabled. They will be formatted differently when the
+// `pmbus` dependency is not enabled, since we require the `pmbus` crate to
+// determine the names of bitfields.
+#[cfg_attr(not(feature = "pmbus"), ignore)]
 #[test]
 fn pmbus_alert_8_space_tabs() {
     let json = serde_json::from_str::<Object>(PMBUS_ALERT_EREPORT)
@@ -121,6 +130,11 @@ fn pmbus_alert_8_space_tabs() {
     );
 }
 
+// We only run tests for formatting ereports with PMBus status objects when the
+// `pmbus` dependency is enabled. They will be formatted differently when the
+// `pmbus` dependency is not enabled, since we require the `pmbus` crate to
+// determine the names of bitfields.
+#[cfg_attr(not(feature = "pmbus"), ignore)]
 #[test]
 fn pmbus_alert_indented() {
     let json = serde_json::from_str::<Object>(PMBUS_ALERT_EREPORT)
@@ -161,12 +175,8 @@ fn apollo_13_indented() {
         .expect("JSON must parse");
     let displayed =
         Displayer::new(&json).with_initial_indent_spaces(4).to_string();
-    assert_contents(
-        "tests/output/apollo_13_indented.txt",
-        displayed.as_ref(),
-    );
+    assert_contents("tests/output/apollo_13_indented.txt", displayed.as_ref());
 }
-
 
 #[test]
 fn bad_ashift() {
@@ -196,8 +206,5 @@ fn bad_ashift_indented() {
         .expect("JSON must parse");
     let displayed =
         Displayer::new(&json).with_initial_indent_spaces(4).to_string();
-    assert_contents(
-        "tests/output/bad_ashift_indented.txt",
-        displayed.as_ref(),
-    );
+    assert_contents("tests/output/bad_ashift_indented.txt", displayed.as_ref());
 }

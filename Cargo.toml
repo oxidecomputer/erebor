@@ -5,8 +5,16 @@ edition = "2024"
 description = "A less ugly pretty-printer for `serde_json`-y ereport data."
 license = "MPL-2.0"
 
+[features]
+default = ["pmbus"]
+
 [dependencies]
 serde_json = "1.0"
+
+[dependencies.pmbus]
+optional = true
+git = "https://github.com/oxidecomputer/pmbus"
+rev = "3e681b17aafce32e80e06aff2dd841c9153cf069"
 
 [dev-dependencies]
 expectorate = "1.2.0"

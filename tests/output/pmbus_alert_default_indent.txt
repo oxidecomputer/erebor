@@ -13,13 +13,13 @@ hubris_task_name = cosmo_seq
 hubris_uptime_ms = 420024730 ms
 class = hw.pwr.pmbus.alert
 pmbus_status = (PMBus status)
-    STATUS_WORD         = 0b0100000000000001
-    STATUS_VOUT         = 0b00000000
-    STATUS_IOUT         = 0b00100000
-    STATUS_INPUT        = 0b00000000
-    STATUS_TEMPERATURE  = 0b00000000
-    STATUS_CML          = 0b00000000
-    STATUS_MFR_SPECIFIC = 0b00000000
+    STATUS_WORD         = 0x4001 (OutputCurrentFault | NoneOfTheAbove)
+    STATUS_VOUT         = 0x00
+    STATUS_IOUT         = 0x20 (OutputOvercurrentWarning)
+    STATUS_INPUT        = 0x00
+    STATUS_TEMPERATURE  = 0x00
+    STATUS_CML          = 0x00
+    STATUS_MFR_SPECIFIC = 0x00
 (end PMBus status)
 
 pwr_good = true

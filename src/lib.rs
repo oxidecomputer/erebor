@@ -69,19 +69,19 @@ use std::fmt;
 /// version = 0x0
 /// ```
 pub struct Displayer<'a> {
-    ereport: &'a serde_json::Map<String, serde_json::Value>,
+    ereport: &'a Object,
     indent_spaces: usize,
     initial_indent: usize,
 }
+
+type Object = serde_json::Map<String, serde_json::Value>;
 
 impl<'a> Displayer<'a> {
     pub const DEFAULT_INDENT_SPACES: usize = 4;
     pub const DEFAULT_INITIAL_INDENT: usize = 0;
 
     #[must_use]
-    pub fn new(
-        ereport: &'a serde_json::Map<String, serde_json::Value>,
-    ) -> Self {
+    pub fn new(ereport: &'a Object) -> Self {
         Self {
             ereport,
             indent_spaces: Self::DEFAULT_INDENT_SPACES,
@@ -214,65 +214,105 @@ impl<'a> Displayer<'a> {
         &self,
         f: &mut fmt::Formatter<'_>,
         indent: usize,
-        obj: &serde_json::Map<String, serde_json::Value>,
+        obj: &Object,
     ) -> fmt::Result {
-        const STATUS_WORD: &str = "STATUS_WORD";
-        const STATUS_VOUT: &str = "STATUS_VOUT";
-        const STATUS_IOUT: &str = "STATUS_IOUT";
-        const STATUS_INPUT: &str = "STATUS_INPUT";
-        const STATUS_TEMPERATURE: &str = "STATUS_TEMPERATURE";
-        const STATUS_CML: &str = "STATUS_CML";
-        const STATUS_MFR_SPECIFIC: &str = "STATUS_MFR_SPECIFIC";
-        const REG_WIDTH: usize = const_max_len(&[
-            STATUS_WORD,
-            STATUS_VOUT,
-            STATUS_IOUT,
-            STATUS_INPUT,
-            STATUS_TEMPERATURE,
-            STATUS_MFR_SPECIFIC,
-        ]);
+        macro_rules! status_regs {
+            ($($key:literal, $REG:ident $(as $Width:ty)?);+;) => {
+                const REGWIDTH: usize = const_max_len(&[$(
+                    stringify!($REG),
+                )+]);
+                $(
+                    let name = stringify!($REG);
+                    if let Some(val) = obj.get($key) {
+                        if let Some(val) = val.as_u64() {
+                            $(
+                                #[cfg(feature = "pmbus")]
+                                print_cmddata(
+                                    f,
+                                    indent,
+                                    &pmbus::commands::$REG::CommandData(val as $Width),
+                                )?;
+                                #[cfg(not(feature = "pmbus"))]
+                            )?
+                            writeln!(
+                                f,
+                                "{:>indent$}{name:<REGWIDTH$} = {val:#04x}",
+                                "",
+                            )?;
 
-        fn print_status_reg(
-            obj: &serde_json::Map<String, serde_json::Value>,
+                        } else {
+                            writeln!(
+                                f,
+                                "{:>indent$}{name:<REGWIDTH$} = <wrong type>",
+                                ""
+                            )?;
+                        }
+                    } else {
+                        writeln!(
+                            f,
+                            "{:>indent$}{name:<REGWIDTH$} = <missing>",
+                            ""
+                        )?;
+                    }
+                )+
+
+            };
+        }
+        #[cfg(feature = "pmbus")]
+        fn print_cmddata(
             f: &mut fmt::Formatter<'_>,
             indent: usize,
-            nbits: usize,
-            val_name: &str,
-            reg_name: &str,
+            data: &impl pmbus::CommandData,
         ) -> fmt::Result {
-            let nbits = nbits + 2; // leading "0b"
-            if let Some(val) = obj.get(val_name) {
-                if let Some(val) = val.as_u64() {
-                    writeln!(
-                        f,
-                        "{:>indent$}{reg_name:<REG_WIDTH$} = {val:#0nbits$b}",
-                        ""
-                    )?;
-                } else {
-                    writeln!(
-                        f,
-                        "{:>indent$}{reg_name:<REG_WIDTH$} = <wrong type>",
-                        ""
-                    )?;
-                }
-            } else {
-                writeln!(
+            let mut cmdres = Ok(());
+            data.command(|cmd| {
+                let (bits, pmbus::Bitwidth(bitwidth)) = data.raw();
+                let hexchars = (bitwidth / 4) as usize + 2;
+                let name = cmd.name();
+                cmdres = write!(
                     f,
-                    "{:>indent$}{reg_name:<REG_WIDTH$} = <missing>",
-                    ""
-                )?;
+                    "{:>indent$}{name:<REGWIDTH$} = {bits:#0hexchars$x}",
+                    "",
+                );
+            });
+            cmdres?;
+            let mut seenany = false;
+            let mut res = Ok(());
+            let interpret_ok = data.interpret(
+                || unreachable!("not VoutMode"),
+                |field, value| {
+                    if value.raw() != 0 {
+                        res = write!(
+                            f,
+                            "{}{}",
+                            if seenany { " | " } else { " (" },
+                            field.name()
+                        );
+                        seenany = true;
+                    }
+                },
+            );
+            res?;
+            if let Err(e) = interpret_ok {
+                // For a status register this should never happen, since it's
+                // just bitflags, and every bit is defined...but handle it
+                // gracefully anyhow!
+                writeln!(f, " (uninterpretable: {e:?})")?;
+            } else {
+                writeln!(f, "{}", if seenany { ")" } else { "" })?;
             }
-
             Ok(())
         }
 
-        print_status_reg(obj, f, indent, 16, "word", STATUS_WORD)?;
-        print_status_reg(obj, f, indent, 8, "vout", STATUS_VOUT)?;
-        print_status_reg(obj, f, indent, 8, "iout", STATUS_IOUT)?;
-        print_status_reg(obj, f, indent, 8, "input", STATUS_INPUT)?;
-        print_status_reg(obj, f, indent, 8, "temp", STATUS_TEMPERATURE)?;
-        print_status_reg(obj, f, indent, 8, "cml", STATUS_CML)?;
-        print_status_reg(obj, f, indent, 8, "mfr", STATUS_MFR_SPECIFIC)?;
+        status_regs! {
+            "word", STATUS_WORD as u16;
+            "vout", STATUS_VOUT as u8;
+            "iout", STATUS_IOUT as u8;
+            "input", STATUS_INPUT as u8;
+            "temp", STATUS_TEMPERATURE as u8;
+            "cml", STATUS_CML as u8;
+            "mfr", STATUS_MFR_SPECIFIC;
+        }
 
         Ok(())
     }
