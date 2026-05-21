@@ -218,9 +218,13 @@ impl<'a> Displayer<'a> {
     ) -> fmt::Result {
         macro_rules! status_regs {
             ($($key:literal, $REG:ident $(as $Width:ty)?);+;) => {
+                // First calculate the maximum register name width.
                 const REGWIDTH: usize = const_max_len(&[$(
                     stringify!($REG),
                 )+]);
+                // Next, generate code to print each register, optionally using
+                // the `pmbus` crate to decode its bits, if our `pmbus`
+                // dependency is enabled.
                 $(
                     let name = stringify!($REG);
                     if let Some(val) = obj.get($key) {
@@ -241,16 +245,21 @@ impl<'a> Displayer<'a> {
                             )?;
 
                         } else {
+                            let err = if val.is_null() {
+                                NULL
+                            } else {
+                                WRONG_TYPE
+                            };
                             writeln!(
                                 f,
-                                "{:>indent$}{name:<REGWIDTH$} = <wrong type>",
+                                "{:>indent$}{name:<REGWIDTH$} = {err}",
                                 ""
                             )?;
                         }
                     } else {
                         writeln!(
                             f,
-                            "{:>indent$}{name:<REGWIDTH$} = <missing>",
+                            "{:>indent$}{name:<REGWIDTH$} = {MISSING}",
                             ""
                         )?;
                     }
@@ -341,6 +350,8 @@ impl fmt::Display for Name<'_> {
 }
 
 const NULL: &str = "<null>";
+const WRONG_TYPE: &str = "<wrong type>";
+const MISSING: &str = "<missing>";
 
 pub(crate) const fn const_max_len(strs: &[&str]) -> usize {
     let mut max = 0;
