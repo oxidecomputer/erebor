@@ -200,10 +200,15 @@ impl<'a> Displayer<'a> {
                 }
                 // special-case uptime ms so they aren't in hex
                 (name, serde_json::Value::Number(n))
-                    if let Some(dur) = self.number_to_duration(name, n) =>
+                    if self.humanize_durations
+                        && name_looks_duration_y(name) =>
                 {
-                    writeln!(f, "{:>indent$}{name} = {n} ({dur:?})", "")?;
-                    continue;
+                    if let Some(dur) = self.number_to_duration(name, n) {
+                        writeln!(f, "{:>indent$}{name} = {n} ({dur:?})", "")?;
+                        continue;
+                    } else {
+                        name
+                    }
                 }
                 ("pmbus_status", serde_json::Value::Object(status)) => {
                     writeln!(f, "{:>indent$}{key} = (PMBus status)", "")?;
@@ -350,13 +355,13 @@ impl<'a> Displayer<'a> {
         }
 
         let value = value.as_u64()?;
-        if name.ends_with("_ns") {
+        if name.ends_with(NANOSECOND_SUFFIX) {
             Some(std::time::Duration::from_nanos(value))
-        } else if name.ends_with("_us") {
+        } else if name.ends_with(MICROSECOND_SUFFIX) {
             Some(std::time::Duration::from_micros(value))
-        } else if name.ends_with("_ms") {
+        } else if name.ends_with(MILLISECOND_SUFFIX) {
             Some(std::time::Duration::from_millis(value))
-        } else if name.ends_with("_s") {
+        } else if name.ends_with(SECOND_SUFFIX) {
             Some(std::time::Duration::from_secs(value))
         } else {
             None
@@ -404,6 +409,18 @@ impl fmt::Display for Name<'_> {
 const NULL: &str = "<null>";
 const WRONG_TYPE: &str = "<wrong type>";
 const MISSING: &str = "<missing>";
+
+const NANOSECOND_SUFFIX: &str = "_ns";
+const MICROSECOND_SUFFIX: &str = "_us";
+const MILLISECOND_SUFFIX: &str = "_ms";
+const SECOND_SUFFIX: &str = "_s";
+
+fn name_looks_duration_y(name: &str) -> bool {
+    name.ends_with(NANOSECOND_SUFFIX)
+        || name.ends_with(MICROSECOND_SUFFIX)
+        || name.ends_with(MILLISECOND_SUFFIX)
+        || name.ends_with(SECOND_SUFFIX)
+}
 
 pub(crate) const fn const_max_len(strs: &[&str]) -> usize {
     let mut max = 0;
