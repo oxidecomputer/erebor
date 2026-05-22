@@ -50,18 +50,17 @@ use std::fmt;
 ///
 /// hubris_task_gen = 0x0
 /// hubris_task_name = cosmo_seq
-/// hubris_uptime_ms = 0x1909119a
+/// hubris_uptime_ms = 420024730 (420024.73s)
 /// class = hw.pwr.pmbus.alert
 /// pmbus_status = (PMBus status)
-///     STATUS_WORD = 0b100000000000001
-///     STATUS_VOUT = 0b000000
-///     STATUS_IOUT = 0b100000
-///     STATUS_INPUT = 0b000000
-///     STATUS_TEMPERATURE = 0b000000
-///     STATUS_CML = 0b000000
-///     STATUS_MFR_SPECIFIC = 0b000000
+///    STATUS_WORD         = 0x4001 (OutputCurrentFault | NoneOfTheAbove)
+///    STATUS_VOUT         = 0x00
+///    STATUS_IOUT         = 0x20 (OutputOvercurrentWarning)
+///    STATUS_INPUT        = 0x00
+///    STATUS_TEMPERATURE  = 0x00
+///    STATUS_CML          = 0x00
+///    STATUS_MFR_SPECIFIC = 0x00
 /// (end PMBus status)
-///
 /// pwr_good = true
 /// rail = VDDCR_CPU1_A0
 /// refdes = U103
@@ -72,6 +71,7 @@ pub struct Displayer<'a> {
     ereport: &'a serde_json::Value,
     indent_spaces: usize,
     initial_indent: usize,
+    humanize_durations: bool,
 }
 
 type Object = serde_json::Map<String, serde_json::Value>;
@@ -86,6 +86,7 @@ impl<'a> Displayer<'a> {
             ereport,
             indent_spaces: Self::DEFAULT_INDENT_SPACES,
             initial_indent: 0,
+            humanize_durations: true,
         }
     }
 
@@ -100,6 +101,19 @@ impl<'a> Displayer<'a> {
     #[must_use]
     pub fn with_initial_indent_spaces(self, initial_indent: usize) -> Self {
         Self { initial_indent, ..self }
+    }
+
+    /// If `true`, number fields ending in a suffix that looks like a duration
+    /// value in a known unit (in this case, `_ns`, `_us`, `_ms`, and `_s`),
+    /// will be interpreted as [`std::time::Duration`] values and formatted as
+    /// such.
+    ///
+    /// If `false`, this behavior is disabled.
+    ///
+    /// By default, this is enabled.
+    #[must_use]
+    pub fn with_humanized_durations(self, humanize_times: bool) -> Self {
+        Self { humanize_durations: humanize_times, ..self }
     }
 
     fn prettyprint_json(
@@ -186,9 +200,9 @@ impl<'a> Displayer<'a> {
                 }
                 // special-case uptime ms so they aren't in hex
                 (name, serde_json::Value::Number(n))
-                    if name.ends_with("ms") =>
+                    if let Some(dur) = self.number_to_duration(name, n) =>
                 {
-                    writeln!(f, "{:>indent$}{name} = {n} ms", "")?;
+                    writeln!(f, "{:>indent$}{name} = {n} ({dur:?})", "")?;
                     continue;
                 }
                 ("pmbus_status", serde_json::Value::Object(status)) => {
@@ -324,6 +338,29 @@ impl<'a> Displayer<'a> {
         }
 
         Ok(())
+    }
+
+    fn number_to_duration(
+        &self,
+        name: &str,
+        value: &serde_json::Number,
+    ) -> Option<std::time::Duration> {
+        if !self.humanize_durations {
+            return None;
+        }
+
+        let value = value.as_u64()?;
+        if name.ends_with("_ns") {
+            Some(std::time::Duration::from_nanos(value))
+        } else if name.ends_with("_us") {
+            Some(std::time::Duration::from_micros(value))
+        } else if name.ends_with("_ms") {
+            Some(std::time::Duration::from_millis(value))
+        } else if name.ends_with("_s") {
+            Some(std::time::Duration::from_secs(value))
+        } else {
+            None
+        }
     }
 }
 

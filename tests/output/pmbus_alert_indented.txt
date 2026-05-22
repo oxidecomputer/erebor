@@ -10,7 +10,7 @@
 
     hubris_task_gen = 0x0
     hubris_task_name = cosmo_seq
-    hubris_uptime_ms = 420024730 ms
+    hubris_uptime_ms = 420024730 (420024.73s)
     class = hw.pwr.pmbus.alert
     pmbus_status = (PMBus status)
         STATUS_WORD         = 0x4001 (OutputCurrentFault | NoneOfTheAbove)
